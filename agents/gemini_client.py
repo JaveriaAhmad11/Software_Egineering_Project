@@ -6,7 +6,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
-
+from google.genai import types
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +39,10 @@ class GeminiClient:
         self.model = model or os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
         self.timeout_s = timeout_s or int(os.getenv("GEMINI_TIMEOUT_S", "60"))
         self.max_retries = max_retries or int(os.getenv("GEMINI_MAX_RETRIES", "3"))
-        self._client = genai.Client(api_key=api_key)
+        self._client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=self.timeout_s * 1000),
+)
 
     def generate(self, prompt: str) -> str:
         for attempt in range(1, self.max_retries + 1):
