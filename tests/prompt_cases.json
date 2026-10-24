@@ -1,0 +1,32 @@
+[
+  {
+    "id": "PC-01",
+    "name": "8-bit counter",
+    "request": "8-bit synchronous up counter with enable and active-low synchronous reset. Ports: clk, rst_n, en, count.",
+    "ports": ["clk", "rst_n", "en", "count"]
+  },
+  {
+    "id": "PC-02",
+    "name": "4-to-1 mux",
+    "request": "4-to-1 multiplexer for 8-bit data. Ports: d0, d1, d2, d3, sel, y.",
+    "ports": ["d0", "d1", "d2", "d3", "sel", "y"]
+  },
+  {
+    "id": "PC-03",
+    "name": "8-bit ALU",
+    "request": "8-bit ALU with ADD, SUB, AND, OR and a zero flag. Ports: a, b, op, y, zero.",
+    "ports": ["a", "b", "op", "y", "zero"]
+  },
+  {
+    "id": "PC-04",
+    "name": "Sync FIFO",
+    "request": "Synchronous FIFO depth 8, width 8, with full and empty flags. Ports: clk, rst_n, wr_en, rd_en, din, dout, full, empty.",
+    "ports": ["clk", "rst_n", "wr_en", "rd_en", "din", "dout", "full", "empty"]
+  },
+  {
+    "id": "PC-05",
+    "name": "1011 detector FSM",
+    "request": "Moore FSM that detects the serial sequence 1011. Ports: clk, rst_n, din, detected.",
+    "ports": ["clk", "rst_n", "din", "detected"]
+  }
+]
