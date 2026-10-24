@@ -39,3 +39,36 @@ requirements.txt
 
 **Sprint 1 (current):** repository scaffolding and a working Gemini API connection.
 Later sprints implement each agent, the Verilog simulation loop, and the end-to-end pipeline.
+## Verifier and CLI (Sprint 1)
+
+### Install Icarus Verilog (`iverilog`, `vvp`)
+
+The verifier harness (`agents/verifier/harness.py`) needs Icarus Verilog 12 or newer.
+
+**Windows**
+1. `winget install Icarus.Verilog` (if the download is blocked on your network, use a mobile hotspot for the install).
+2. If `iverilog` is not recognised, add it to PATH: `[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\iverilog\bin", "User")`
+3. Restart your terminal and VS Code.
+
+**Ubuntu / WSL:** `sudo apt install iverilog`
+
+Check the install with `iverilog -V` and `vvp -V`. The harness also looks in `C:\iverilog\bin` and the usual Program Files folders if PATH is not set.
+
+### Run the CLI
+
+```
+pip install -r requirements.txt            # on Windows: py -m pip install -r requirements.txt
+python main.py "8-bit counter"             # generate with Gemini, then compile with iverilog
+python main.py "8-bit counter" --tb tb.v   # also simulate with a testbench
+python main.py --verify design.v --tb tb.v # verify an existing file, no API call
+```
+
+The CLI prints a PASS/FAIL summary and exits 0 (PASS), 1 (FAIL) or 2 (error, e.g. missing `GEMINI_API_KEY`). A testbench reports a mismatch by printing the word `FAIL`.
+
+### Run the tests
+
+```
+python -m pytest -v        # on Windows: py -m pytest -v
+```
+
+All tests run without an API key: the LLM is mocked, and the iverilog tests skip themselves if iverilog is not installed.
