@@ -45,3 +45,11 @@ def test_model_name_comes_from_config_not_code(monkeypatch):
 def test_explicit_model_overrides_env(monkeypatch):
     monkeypatch.setenv("GEMINI_MODEL", "model-from-env")
     assert _client(monkeypatch, model="explicit-model").model == "explicit-model"
+
+
+def test_default_model_and_timeout_are_the_audited_ones(monkeypatch):
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+    monkeypatch.delenv("GEMINI_TIMEOUT_S", raising=False)
+    client = _client(monkeypatch)
+    assert client.model == "gemini-3.5-flash-lite"
+    assert client.timeout_s == 45
