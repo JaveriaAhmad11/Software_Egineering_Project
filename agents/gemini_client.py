@@ -36,8 +36,8 @@ class GeminiClient:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise GeminiConfigError("GEMINI_API_KEY not found. Check your .env file.")
-        self.model = model or os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-        self.timeout_s = timeout_s or int(os.getenv("GEMINI_TIMEOUT_S", "60"))
+        self.model = model or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+        self.timeout_s = timeout_s or int(os.getenv("GEMINI_TIMEOUT_S", "45"))
         self.max_retries = max_retries or int(os.getenv("GEMINI_MAX_RETRIES", "3"))
         self._client = genai.Client(
         api_key=api_key,
