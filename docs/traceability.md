@@ -12,3 +12,11 @@
 | PM-01 | DoR and DoD, project requirements | SCRUM-22 | #6 | n/a | `docs/team_agreements.md`, `docs/requirements.md` |
 
 All 29 tests pass: `python -m pytest tests -v` on Python 3.13.
+
+# Requirements Traceability Matrix - Sprint 2
+
+| Requirement ID | Description | Jira Story | Pull Request | Prompt Version | Verification Test |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| FR-01 | Harness failure classification | S2-05[cite: 7] | PR #[X] | N/A | `tests/test_harness.py` |
+| FR-02 | Loop controller (max 3 repairs) | S2-11[cite: 7] | PR #[X] | N/A | `tests/test_repair_loop.py`[cite: 12] |
+| AIR-01 | Repair prompt v1.0 constraints | S2-08[cite: 7] | PR #[X] | v1.0[cite: 9] | `tests/test_repair.py`[cite: 12] |
