@@ -147,3 +147,13 @@ def test_failed_attempts_are_recorded(monkeypatch):
     with pytest.raises(gc.GeminiCallFailed):
         client.generate("hi")
     assert [s["ok"] for s in client.stats] == [False, False]
+
+
+def test_unit_tests_do_not_write_to_the_real_log(monkeypatch):
+    real = gc.LOG_DIR / "gemini.log"
+    before = real.stat().st_size if real.exists() else 0
+    client = _client(monkeypatch)
+    client._client.interactions = _GoodInteractions()
+    client.generate("hi")
+    after = real.stat().st_size if real.exists() else 0
+    assert after == before
