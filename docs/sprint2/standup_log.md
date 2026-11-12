@@ -7,8 +7,12 @@
 
 ## Day 2 - [Tue 10 Nov 2026]
 * **Javeria:** Created tracking structure and began drafting requirements.
-* **Shamin** Completed SCRUM-46
+* **Shamin:** Completed SCRUM-46
 
 ## Day 3 - [Wed 11 Nov 2026]
-* **Javeria** updated and added standup_log.md and impediment_log.md
-* **Shamin** Completed SCRUM-47
+* **Javeria:** updated and added standup_log.md and impediment_log.md
+* **Shamin:** Completed SCRUM-47
+
+## Day 4 - [Thu 12 Nov 2026]
+* **Javeria:** updated daily logs and added burndown screenshot
+* **Areesha:** completed SCRUM-37 
