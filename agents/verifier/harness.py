@@ -15,6 +15,11 @@ from pathlib import Path
 
 DEFAULT_TIMEOUT = 10  # seconds, applies to compile and to simulation separately
 
+TOOL_MISSING = "iverilog/vvp not found. Install Icarus Verilog and add it to PATH."
+KINDS = ("ok", "compile_error", "testbench_error", "assertion_failure", "timeout", "tool_missing")
+_FAIL_RE = re.compile(r"\bFAIL\b")
+_PASS_RE = re.compile(r"\bPASS\b")
+
 _WINDOWS_DIRS = [
     r"C:\iverilog\bin",
     r"C:\Program Files\Icarus Verilog\bin",
@@ -78,7 +83,7 @@ def run_verification(design_file, testbench_file=None, timeout: float = DEFAULT_
     iverilog, vvp = _find_tool("iverilog"), _find_tool("vvp")
     if not iverilog or not vvp:
         result["errors"].append({"file": None, "line": None,
-                                 "message": "iverilog/vvp not found. Install Icarus Verilog and add it to PATH."})
+                                 "message": TOOL_MISSING})
         return result
 
     sources = [Path(design_file)] + ([Path(testbench_file)] if testbench_file else [])
@@ -117,6 +122,44 @@ def run_verification(design_file, testbench_file=None, timeout: float = DEFAULT_
         else:
             result["simulated"] = True
     return result
+
+
+def classify_failure(result: dict, testbench=None) -> dict:
+    """Classify a run_verification result (S2-05). The harness stays the only judge.
+
+    Returns {"kind", "errors", "log"} where kind is one of KINDS:
+      tool_missing       iverilog/vvp are not installed
+      timeout            compile or simulation hit the timeout
+      testbench_error    the testbench is the problem (it does not compile, vvp crashed,
+                         or it ran silently and proved nothing): never sent to repair
+      compile_error      the design does not compile
+      assertion_failure  the testbench ran to the end and printed FAIL (even on a clean exit)
+      ok                 compiled, simulated, printed PASS and never printed FAIL
+
+    `testbench` is the testbench file path, used to tell a testbench compile error
+    from a design compile error. Without a testbench nothing was checked, so the
+    result is never "ok": a successful compile alone proves nothing.
+    """
+    errors = result.get("errors", [])
+    log = result.get("log", "")
+    tb_name = Path(testbench).name if testbench else None
+
+    if any(TOOL_MISSING.split(".")[0] in (e.get("message") or "") for e in errors):
+        kind = "tool_missing"
+    elif result.get("timed_out"):
+        kind = "timeout"
+    elif not result.get("compiled"):
+        in_tb = any(e.get("file") and Path(e["file"]).name == tb_name for e in errors)
+        kind = "testbench_error" if in_tb else "compile_error"
+    elif not result.get("simulated"):
+        kind = "testbench_error"      # vvp crashed or no testbench was run
+    elif _FAIL_RE.search(log):
+        kind = "assertion_failure"    # a FAIL print is never success
+    elif _PASS_RE.search(log):
+        kind = "ok"
+    else:
+        kind = "testbench_error"      # a silent testbench proves nothing
+    return {"kind": kind, "errors": errors, "log": log}
 
 
 if __name__ == "__main__":  # python -m agents.verifier.harness design.v [testbench.v]
