@@ -16,3 +16,7 @@
 ## Day 4 - [Thu 12 Nov 2026]
 * **Javeria:** updated daily logs and added burndown screenshot
 * **Areesha:** completed SCRUM-37 
+
+## Day 5 - [Fri 13 Nov 2026]
+* **Javeria:** updated daily logs and added burndown screenshot
+* **Laraib:** completed SCRUM-43 and SCRUM-44 
