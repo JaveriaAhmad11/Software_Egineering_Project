@@ -3,47 +3,32 @@
 Verify -> classify -> repair -> verify again, at most `max_repairs` times.
 The harness is the only judge: success needs a clean compile AND a PASS from the
 testbench. Every attempt is saved to its own file so each repair can be audited.
+
+Design-first check: when the testbench run does not compile, the design is compiled
+alone. A missing endmodule or semicolon makes compiler errors spill into the testbench
+file, so without this check a broken design would be blamed on the testbench.
 """
 from __future__ import annotations
 
 import logging
-import re
 from pathlib import Path
 
-from agents.verifier.harness import run_verification
+from agents.verifier.harness import classify_failure, run_verification
 
 log = logging.getLogger(__name__)
 
-_FAIL = re.compile(r"\bFAIL\b")
-_PASS = re.compile(r"\bPASS\b")
 REPAIRABLE = {"compile_error", "assertion_failure"}  # only real RTL problems go to repair
 
 
-def _classify(result: dict, testbench) -> dict:
-    """Turn a run_verification result into {"kind", "errors", "log"}.
-
-    Temporary stand-in for Areesha's classify_failure (S2-05); swap it in once merged.
-    """
-    errors = result.get("errors", [])
-    text = result.get("log", "")
-    tb_name = Path(testbench).name if testbench else None
-
-    if any("iverilog/vvp not found" in (e.get("message") or "") for e in errors):
-        kind = "tool_missing"
-    elif result.get("timed_out"):
-        kind = "timeout"
-    elif not result.get("compiled"):
-        in_tb = any(e.get("file") and Path(e["file"]).name == tb_name for e in errors)
-        kind = "testbench_error" if in_tb else "compile_error"
-    elif not result.get("simulated"):
-        kind = "testbench_error"          # vvp crashed: not the RTL's fault
-    elif _FAIL.search(text):
-        kind = "assertion_failure"        # a FAIL print is never success
-    elif _PASS.search(text):
-        kind = "ok"
-    else:
-        kind = "testbench_error"          # silent testbench proves nothing
-    return {"kind": kind, "errors": errors, "log": text}
+def _classify(path, testbench, verify) -> dict:
+    result = verify(path, testbench)
+    failure = classify_failure(result, testbench)
+    if failure["kind"] == "testbench_error" and not result.get("compiled"):
+        alone = verify(path, None)                   # does the design compile on its own?
+        if not alone.get("compiled"):
+            failure = {"kind": "compile_error", "errors": alone.get("errors", []),
+                       "log": alone.get("log", "")}
+    return failure
 
 
 def run_repair_loop(design, testbench, spec, max_repairs=3, repair=None,
@@ -56,8 +41,11 @@ def run_repair_loop(design, testbench, spec, max_repairs=3, repair=None,
     design = Path(design)
     verify = verify or run_verification
     if repair is None:
-        from agents.repair.agent import repair_verilog  # Laraib's agent (S2-09)
-        repair = repair_verilog
+        from agents.repair.agent import repair_verilog  # repair agent (S2-09)
+        tb_text = Path(testbench).read_text(encoding="utf-8")
+
+        def repair(code, failure, spec):  # the testbench tells the model what is expected
+            return repair_verilog(code, failure, spec, testbench=tb_text)
     outdir = Path(outdir) if outdir else design.parent / f"{design.stem}_attempts"
     outdir.mkdir(parents=True, exist_ok=True)
 
@@ -67,7 +55,7 @@ def run_repair_loop(design, testbench, spec, max_repairs=3, repair=None,
     while True:
         path = outdir / f"{design.stem}_attempt{repairs_used}{design.suffix}"
         path.write_text(code, encoding="utf-8")          # original file is never overwritten
-        failure = _classify(verify(path, testbench), testbench)
+        failure = _classify(path, testbench, verify)
         history.append({"attempt": repairs_used, "file": str(path), **failure})
         log.info("attempt %d: %s", repairs_used, failure["kind"])
 
@@ -84,6 +72,6 @@ def run_repair_loop(design, testbench, spec, max_repairs=3, repair=None,
             break
         repairs_used += 1
 
-    return {"success": success, "iterations": repairs_used, "final_file": history[-1]["file"]
-            if history[-1]["file"] else str(path), "history": history,
-            "manual_review": not success}
+    final = next((h["file"] for h in reversed(history) if h["file"]), str(path))
+    return {"success": success, "iterations": repairs_used, "final_file": final,
+            "history": history, "manual_review": not success}
