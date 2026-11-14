@@ -106,3 +106,10 @@ def test_missing_key_is_one_clear_line(capsys):
 
     assert rc.main(client_factory=no_key) == 2
     assert "ERROR: GEMINI_API_KEY not found" in capsys.readouterr().out
+
+
+def test_results_record_the_repair_prompt_version(tmp_path):
+    from agents.repair.prompt import PROMPT_VERSION
+    outs = {"a.v": outcome(True, 1, "compile_error", "ok")}
+    _, _, text = go(tmp_path, outs)
+    assert f"Repair prompt:** {PROMPT_VERSION}" in text

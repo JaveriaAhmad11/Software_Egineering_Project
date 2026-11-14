@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from agents.repair.loop import run_repair_loop
+from agents.repair.prompt import PROMPT_VERSION
 
 FAULTS = Path("tests/fixtures/faults")
 TESTBENCH = Path("tests/fixtures/counter_tb.v")
@@ -60,6 +61,7 @@ def format_section(rows, model, stamp) -> str:
     average = f"{sum(every) / len(every):.1f} s" if every else "n/a"
     lines = [f"\n## Benchmark Run - {stamp}",
              f"* **Model Used:** {model}",
+             f"* **Repair prompt:** {PROMPT_VERSION}",
              f"* **Total Cases Tested:** {len(rows)}",
              f"* **Repaired (PASS):** {passed}",
              f"* **Not repaired (recorded as failures):** {len(rows) - passed}",
@@ -108,3 +110,4 @@ def main(argv=None, client_factory=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
