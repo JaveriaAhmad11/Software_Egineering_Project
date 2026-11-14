@@ -1,4 +1,6 @@
-module counter_mutant (input clk, output reg [3:0] q);
-    always @(posedge clk)
-        q <= q + 2; // Functionally wrong increment value expected by testbench
+module counter8 (input clk, input rst_n, output reg [7:0] count);
+  always @(posedge clk) begin
+    if (!rst_n) count <= 8'd0;
+    else        count <= count + 8'd2;  // wrong increment, testbench expects +1
+  end
 endmodule

@@ -1,4 +1,6 @@
-module counter_bad1 (input clk, output reg [3:0] q);
-    always @(posedge clk)
-        q <= q + 1  // Missing semicolon here
+module counter8 (input clk, input rst_n, output reg [7:0] count);
+  always @(posedge clk) begin
+    if (!rst_n) count <= 8'd0;
+    else        count <= count + 8'd1  // missing semicolon
+  end
 endmodule
