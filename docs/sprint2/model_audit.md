@@ -36,7 +36,17 @@ Real log line (copied from logs/gemini.log, not edited):
 - Unit tests were writing fake lines into the real logs/gemini.log (test red run: file grew from 16690 to 16851 bytes). Fixed with tests/conftest.py.
 - test_gemini_connection.py (Sprint 0 script) hardcoded gemini-3.8-flash and failed for everyone. It now uses the shared GeminiClient and the audited defaults; verified with a real call on 14 Nov 2026 (model=gemini-3.5-flash-lite, latency 5.9 s).
 
-## 4. AC3 benchmark summary - PENDING
+## 4. AC3 benchmark summary (real run, 14 Nov 2026 13:15)
 
-To be filled from the real output of python -m tests.run_repair_cases once Javeria's S2-04 is merged: cases run, calls per case, average latency, failures.
+Source: python -m tests.run_repair_cases, results in docs/sprint2/repair_results.md. Model: gemini-3.5-flash-lite, 45 s timeout.
 
+| Measure | Value |
+|---|---|
+| Cases run | 5 |
+| Repaired (PASS) | 4 |
+| Not repaired | 1 (port_fault.v: testbench_error, the port guard forbids the only fix, so Gemini was never called) |
+| Gemini calls | 4 (1 per repaired case), 0 failed |
+| Average latency per call | 3.5 s (5.4, 2.3, 3.5, 2.9) |
+| Tokens per call | 735 to 792 total (about 660 to 716 in, 76 out) |
+
+Limits: 5 small cases on one counter design, single run, one machine. The first live attempt crashed because the benchmark branch did not yet have the client's stats field (unit tests used a fake client); fixed by merging the SCRUM-47 branch.

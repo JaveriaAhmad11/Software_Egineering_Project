@@ -1,4 +1,6 @@
-module counter_bad2 (input clk, output reg [3:0] q);
-    always @(posedge clk)
-        q <= undefined_signal + 1; // Using undeclared signal
+module counter8 (input clk, input rst_n, output reg [7:0] count);
+  always @(posedge clk) begin
+    if (!rst_n) count <= 8'd0;
+    else        count <= undefined_signal + 8'd1;  // undeclared signal
+  end
 endmodule
