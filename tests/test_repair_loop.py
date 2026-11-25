@@ -24,12 +24,20 @@ def assertion_fail():
 
 
 class FakeVerify:
-    """Returns the prepared results in order; repeats the last one if called more often."""
-    def __init__(self, results):
+    """Returns the prepared results in order; repeats the last one if called more often.
+
+    A call without a testbench is the loop's design-only compile check; it answers
+    with `design_alone` (by default: the design compiles on its own).
+    """
+    def __init__(self, results, design_alone=None):
         self.results = list(results)
+        self.design_alone = design_alone or {"compiled": True, "simulated": False,
+                                             "timed_out": False, "errors": [], "log": ""}
         self.calls = []
 
     def __call__(self, design, testbench=None, timeout=10):
+        if testbench is None:
+            return self.design_alone
         self.calls.append(Path(design))
         return self.results[min(len(self.calls) - 1, len(self.results) - 1)]
 
@@ -37,18 +45,20 @@ class FakeVerify:
 class FakeRepair:
     def __init__(self):
         self.kinds = []
+        self.failures = []
 
     def __call__(self, code, failure, spec):
         self.kinds.append(failure["kind"])
+        self.failures.append(failure)
         return f"module m; // repair {len(self.kinds)}\nendmodule\n"
 
 
-def run(tmp_path, results, max_repairs=3):
+def run(tmp_path, results, max_repairs=3, design_alone=None):
     design = tmp_path / "design.v"
     design.write_text(ORIGINAL)
     tb = tmp_path / "design_tb.v"
     tb.write_text("// testbench\n")
-    verify, repair = FakeVerify(results), FakeRepair()
+    verify, repair = FakeVerify(results, design_alone), FakeRepair()
     out = run_repair_loop(design, tb, "a spec", max_repairs=max_repairs,
                           repair=repair, verify=verify, outdir=tmp_path / "attempts")
     return out, verify, repair, design
@@ -109,3 +119,17 @@ def test_every_attempt_is_saved_separately(tmp_path):
     assert len(set(files)) == 3 and all(f.exists() for f in files)
     assert design.read_text() == ORIGINAL          # original never overwritten
     assert Path(out["final_file"]) == files[-1]
+
+
+def test_design_that_does_not_compile_alone_is_a_design_error(tmp_path):
+    # e.g. a missing endmodule: the compiler's errors spill into the testbench file
+    out, _, repair, _ = run(tmp_path, [compile_fail("design_tb.v"), ok()],
+                            design_alone=compile_fail("design.v"))
+    assert repair.kinds == ["compile_error"]
+    assert out["success"] is True
+
+
+def test_repair_receives_the_design_errors_not_testbench_noise(tmp_path):
+    _, _, repair, _ = run(tmp_path, [compile_fail("design_tb.v"), ok()],
+                          design_alone=compile_fail("design.v"))
+    assert repair.failures[0]["errors"][0]["file"] == "design.v"
