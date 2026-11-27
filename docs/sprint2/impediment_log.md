@@ -2,6 +2,7 @@
 
 | Date | Owner | Impediment / Blocked Task | Resolution Status & Details |
 | :--- | :--- | :--- | :--- |
+| [Date] | Javeria | [Description of problem] | [Resolved / Pending - how it was fixed] |
 | Nov 11, 2026 | Shamin / Javeria | `gemini-3.8-flash` model endpoint occasionally hung or timed out during live repair runs (SCRUM-47). | **Resolved.** Switched default model configuration to audited `gemini-3.5-flash-lite` with a 45s timeout and 3 retries in `.env.example`. Live repair latencies dropped to 3.7s–4.1s. |
 | Nov 12, 2026 | Team Member 3 | Python 3.15 environment could not install `google-genai` due to missing `pydantic` binary wheels. | **Resolved.** Created a localized project `.venv` using Python 3.12, allowing all dependencies and tests to install and execute successfully. |
 | Nov 12, 2026 | Team Member 3 | Rebuilding team repo history caused git rebase conflicts on an old commit (`SCRUM-21`) when updating Sprint 1 branch. | **Resolved.** Aborted the rebase operation and directly cherry-picked the relevant commits onto the updated `main` branch. |

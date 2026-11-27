@@ -17,6 +17,9 @@ All 29 tests pass: `python -m pytest tests -v` on Python 3.13.
 
 | Requirement ID | Description | Jira Story | Pull Request | Prompt Version | Verification Test |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| FR-01 | Harness failure classification | S2-05[cite: 7] | PR #[X] | N/A | `tests/test_harness.py` |
+| FR-02 | Loop controller (max 3 repairs) | S2-11[cite: 7] | PR #[X] | N/A | `tests/test_repair_loop.py`[cite: 12] |
+| AIR-01 | Repair prompt v1.0 constraints | S2-08[cite: 7] | PR #[X] | v1.0[cite: 9] | `tests/test_repair.py`[cite: 12] |
 | **FR-01** | Harness failure classification (6 categories) | SCRUM-37 | PR # [Link] | N/A | `tests/test_harness.py` (17 tests) |
 | **FR-02** | Loop controller & repair loop (max 3 retries) | SCRUM-46 / S2-11 | PR # [Link] | N/A | `tests/test_repair_loop.py` |
 | **FR-03** | Port-invariance guard (interface protection) | SCRUM-44 | PR # [Link] | N/A | Unit tests (19 tests) |
