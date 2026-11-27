@@ -1,17 +1,5 @@
 # Sprint 2 - Daily Standup Log
 
-## Day 1 - [Mon 9 Nov 2026]
-* **Javeria:** Initialized Sprint 2 in Jira, set up feature branches, captured start backlog and Day-1 burndown screenshots.
-* **Laraib** Initialized all the stories for sprint 2 and declared their AC and DoR.
-* **Team Updates:** Agreed on interface contracts and branch protection requirements.
-
-## Day 2 - [Tue 10 Nov 2026]
-* **Javeria:** Created tracking structure and began drafting requirements.
-* **Shamin** Completed SCRUM-46 
-
-## Day 3 - [Wed 11 Nov 2026]
-* **Javeria** Added standup_log.md and impediment_log.md, updated requirement.md and traceability.md
-* **Shamin** Completed SCRUM-47
 ## Day 1 & 2 - Sprint Initialization & Planning
 * **Javeria (Scrum Master), Shamin (Product Owner), Laraib & Areesha:** Adjusted sprint schedule following exam week (started Nov 11, 2026). Set up initial backlog assignments across SCRUM-32 through SCRUM-47. Agreed on default model configuration (`gemini-3.5-flash-lite`, 45s timeout, 3 retries).
 
@@ -34,3 +22,4 @@
   * Completed SCRUM-36: Built fault fixtures and updated `tests/run_repair_cases.py` to execute live repair loops rather than static outputs.
   * In Progress (SCRUM-33 & SCRUM-35): Compiled daily tracking logs, impediment log, velocity metrics, retrospective, requirements document (`docs/requirements.md`), and traceability matrix (`docs/traceability.md`).
   * Initiated review ring PR merges and prepared Sprint 3 backlog items (SCRUM-48 to SCRUM-53).
+

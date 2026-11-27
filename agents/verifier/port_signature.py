@@ -21,7 +21,6 @@ def port_signature(code: str) -> dict[str, tuple[str, int]]:
     ports = {}
     
     # Split by comma to get individual ports
-    # (This is a basic parser and assumes standard ANSI Verilog formatting)
     parts = header.split(",")
     
     current_dir = None
