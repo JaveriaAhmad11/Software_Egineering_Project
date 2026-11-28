@@ -192,6 +192,11 @@ def main(argv=None, generate=None, verify=None, repair=None, generate_tb=None) -
     )
     parser.add_argument("request", nargs="?", help='e.g. "8-bit counter"')
     parser.add_argument("--verify", metavar="FILE", help="verify an existing .v file instead of generating")
+    parser.add_argument(
+        "--pipeline",
+        action="store_true",
+        help="run the full spec -> RTL -> verify -> repair -> lint -> report pipeline",
+    )
     parser.add_argument("--tb", metavar="FILE", help="testbench .v file to simulate with")
     parser.add_argument("--repair", action="store_true",
                         help="on failure, ask Gemini to repair the design and re-verify (bounded retries)")
@@ -199,9 +204,35 @@ def main(argv=None, generate=None, verify=None, repair=None, generate_tb=None) -
     args = parser.parse_args(argv)
     if bool(args.request) == bool(args.verify):
         parser.error("give either a request or --verify FILE (not both)")
+    # AC3: usage error if both flags are passed
+    if args.pipeline and getattr(args, "verify", False):
+        parser.error("--pipeline cannot be combined with --verify (exit 2)")
+    if args.pipeline:
+    # Import here to avoid circular import issues if pipeline imports CLI tools
+    from agents.pipeline import run_pipeline
+    
+    def progress(stage, message=""):
+        print(f"[{stage}] {message}".rstrip())
     if args.repair and args.verify and not args.tb:
         parser.error("--repair needs a testbench: add --tb FILE")
 
+    try:
+        # We pass the user's request and our progress printer to Shamin's function
+        result = run_pipeline(args.request, progress=progress)
+        
+        print(f"Result: {result['status']} at stage {result['stage']}")
+        if result.get("message"):
+            print(f"Message: {result['message']}")
+        if result.get("report"):
+            print(f"Report: {result['report']}")
+        
+        # AC2: Return codes 0 for PASS, 1 for FAIL, 2 for ERROR
+        return {"PASS": 0, "FAIL": 1}.get(result["status"], 2)
+        
+    except ImportError:
+        # This handles the case where Shamin hasn't pushed his code yet
+        print("Error: agents.pipeline.run_pipeline is not implemented yet.")
+        return 2
     if args.verify:
         design, spec, total = Path(args.verify), "", 1
         print(f"Verify   : {design}")
