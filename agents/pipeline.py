@@ -21,12 +21,16 @@ from __future__ import annotations
 from functools import partial
 from pathlib import Path
 
-from agents.gemini_client import GeminiCallFailed, GeminiConfigError
+from agents.gemini_client import GeminiCallFailed, GeminiClient, GeminiConfigError
 from agents.repair.agent import repair_verilog
 from agents.repair.loop import run_repair_loop
+from agents.repair.prompt import PROMPT_VERSION as REPAIR_PROMPT
+from agents.rtl_gen.agent import PROMPT_VERSION as RTL_GEN_PROMPT
 from agents.rtl_gen.agent import RTLGenerationError, generate_rtl
+from agents.spec_intake.agent import PROMPT_VERSION as SPEC_INTAKE_PROMPT
 from agents.spec_intake.agent import extract_spec
 from agents.spec_intake.schema import SpecError, check_ports, render_spec, validate_spec
+from agents.testbench.agent import PROMPT_VERSION as TESTBENCH_PROMPT
 from agents.testbench.agent import InvalidTestbenchError, generate_testbench
 from agents.verifier.harness import run_verification
 from agents.verifier.lint import as_text, check_rtl
@@ -64,18 +68,47 @@ def _repair_adapter(testbench_text, repair, api_errors):
     return call
 
 
+def _version(label):
+    """'spec_intake/v1.0' and 'v1.0' both become 'v1.0'."""
+    return str(label).split("/")[-1]
+
+
 def run_pipeline(request, progress=None, *, extract=None, generate=None, make_testbench=None,
-                 verify=None, repair=None, repair_loop=None, report=None, timeout=10) -> dict:
+                 verify=None, repair=None, repair_loop=None, report=None, client=None,
+                 timeout=10) -> dict:
     progress = progress or _no_progress
-    extract = extract or extract_spec
-    generate = generate or generate_rtl
-    make_testbench = make_testbench or generate_testbench
 
     ctx = {"request": request, "spec": None, "spec_text": None, "design": None, "testbench": None,
-           "final_file": None, "repairs": 0, "history": [], "lint": [], "report": None, "notes": []}
+           "final_file": None, "repairs": 0, "history": [], "lint": [], "report": None, "notes": [],
+           "model": None, "gemini_calls": [],
+           "prompt_versions": {"spec_intake": _version(SPEC_INTAKE_PROMPT),
+                               "rtl_gen": _version(RTL_GEN_PROMPT),
+                               "testbench": _version(TESTBENCH_PROMPT),
+                               "repair": _version(REPAIR_PROMPT)}}
 
     def finish(status, stage, message=""):
+        if client is not None:  # run data for the report: the model and every Gemini call
+            ctx["model"] = client.model
+            ctx["gemini_calls"] = [dict(call) for call in client.stats]
         return {**ctx, "status": status, "stage": stage, "message": message}
+
+    # A real run shares one Gemini client, so every call (latency, tokens) lands in client.stats.
+    # When stages are injected (tests) no client is created and none is needed.
+    if client is None and extract is None:
+        try:
+            client = GeminiClient()
+        except GeminiConfigError as exc:
+            return finish(ERROR, "spec_intake", str(exc))
+
+    def bind(stage, default):
+        if stage is not None:
+            return stage
+        return default if client is None else partial(default, client=client)
+
+    extract = bind(extract, extract_spec)
+    generate = bind(generate, generate_rtl)
+    make_testbench = bind(make_testbench, generate_testbench)
+    repair = bind(repair, repair_verilog)
 
     # 1. Spec intake: the model reply is validated before anything trusts it
     progress("spec_intake", "extracting a structured spec")
@@ -124,7 +157,7 @@ def run_pipeline(request, progress=None, *, extract=None, generate=None, make_te
         design,
         testbench,
         spec_text,
-        repair=_repair_adapter(testbench_text, repair or repair_verilog, api_errors),
+                repair=_repair_adapter(testbench_text, repair, api_errors),
         verify=partial(verify or run_verification, timeout=timeout),
         outdir=REPAIR_DIR / f"{design.stem}_attempts",
     )

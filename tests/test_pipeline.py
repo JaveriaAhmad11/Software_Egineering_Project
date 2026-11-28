@@ -191,3 +191,26 @@ def test_report_failure_does_not_break_a_verified_run(tmp_path):
     result = run_pipeline("x", **stages)
     assert result["status"] == "PASS" and result["report"] is None
     assert any("report failed" in n for n in result["notes"])
+
+
+class FakeClient:
+    model = "fake-model"
+
+    def __init__(self):
+        self.stats = [{"ok": True, "attempt": 1, "latency_s": 0.5,
+                       "input_tokens": 10, "output_tokens": 20, "total_tokens": 30}]
+
+
+def test_result_records_model_prompt_versions_and_gemini_calls(tmp_path):
+    stages, _ = make_stages(tmp_path)
+    result = run_pipeline("x", client=FakeClient(), **stages)
+    assert result["model"] == "fake-model"
+    assert result["gemini_calls"][0]["total_tokens"] == 30
+    assert set(result["prompt_versions"]) == {"spec_intake", "rtl_gen", "testbench", "repair"}
+    assert all(v.startswith("v") for v in result["prompt_versions"].values())
+
+
+def test_missing_api_key_is_an_error_not_a_crash(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    result = run_pipeline("x")  # no stages injected, so the real client is requested
+    assert (result["status"], result["stage"]) == ("ERROR", "spec_intake")
