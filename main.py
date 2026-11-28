@@ -81,11 +81,11 @@ def main(argv=None, generate=None, verify=None) -> int:
     args = parser.parse_args(argv)
     if bool(args.request) == bool(args.verify):
         parser.error("give either a request or --verify FILE (not both)")
-        # AC3: usage error if both flags are passed
+    # AC3: usage error if both flags are passed
     if args.pipeline and getattr(args, "verify", False):
         parser.error("--pipeline cannot be combined with --verify (exit 2)")
     if args.pipeline:
-        # Import here to avoid circular import issues if pipeline imports CLI tools
+    # Import here to avoid circular import issues if pipeline imports CLI tools
     from agents.pipeline import run_pipeline
     
     def progress(stage, message=""):
